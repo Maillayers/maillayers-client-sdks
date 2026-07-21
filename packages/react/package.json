@@ -39,10 +39,10 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
-    "build:publish": "tsup --config tsup.publish.config.ts",
+    "build": "node init && tsup",
+    "build:publish": "node init && tsup --config tsup.publish.config.ts",
     "clean": "rm -rf dist",
-    "dev": "tsup --watch",
+    "dev": "node init && tsup --watch",
     "test:license": "npm run build && node scripts/test-license.mjs",
     "test:phase19": "npm run build && node scripts/test-license-security.mjs && node scripts/test-license-iframe.mjs && node scripts/test-origin-security.mjs && node scripts/test-origin-component.mjs && node scripts/test-default-endpoint.mjs && node scripts/test-prop-validation.mjs && node scripts/test-prop-component.mjs && node scripts/test-protocol-security.mjs && node scripts/test-protocol-component.mjs && node scripts/test-callback-security.mjs && node scripts/test-callback-component.mjs && node scripts/test-lifecycle-component.mjs && node scripts/test-asset-security.mjs && node scripts/test-asset-component.mjs && node scripts/test-package-consumers.mjs && node scripts/test-package-quality.mjs && node scripts/test-phase19.mjs",
     "test:editor-endpoint:live": "npm run build && node scripts/test-default-endpoint-live.mjs",

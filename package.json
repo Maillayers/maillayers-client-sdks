@@ -12,8 +12,8 @@
     "lint": "npm run lint -w @maillayers/react-email-editor",
     "typecheck": "npm run typecheck -w @maillayers/react-email-editor",
     "test": "npm test -w @maillayers/react-email-editor",
-    "build": "npm run build -w @maillayers/react-email-editor",
-    "build:publish": "npm run build:publish -w @maillayers/react-email-editor",
+    "build": "node init && npm run build -w @maillayers/react-email-editor",
+    "build:publish": "node init && npm run build:publish -w @maillayers/react-email-editor",
     "verify:react": "npm run lint && npm run typecheck && npm test && npm run build:publish"
   },
   "devDependencies": {}

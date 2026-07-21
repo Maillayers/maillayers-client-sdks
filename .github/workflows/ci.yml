@@ -33,6 +33,9 @@ jobs:
       - run: npm run build:publish
       - run: node scripts/test-package-quality.mjs
       - run: node scripts/test-package-consumers.mjs
+      - name: Create React SDK tarball
+        working-directory: packages/react
+        run: npm pack
       - run: npm run test:framework-consumers
       - run: npm pack --dry-run
 
