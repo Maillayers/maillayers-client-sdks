@@ -1,0 +1,20 @@
+{
+  "name": "maillayers-client-sdks",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Public client SDKs for embedding the hosted MailLayers email editor",
+  "license": "MIT",
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "packages/react"
+  ],
+  "scripts": {
+    "lint": "npm run lint -w @maillayers/react-email-editor",
+    "typecheck": "npm run typecheck -w @maillayers/react-email-editor",
+    "test": "npm test -w @maillayers/react-email-editor",
+    "build": "npm run build -w @maillayers/react-email-editor",
+    "build:publish": "npm run build:publish -w @maillayers/react-email-editor",
+    "verify:react": "npm run lint && npm run typecheck && npm test && npm run build:publish"
+  },
+  "devDependencies": {}
+}

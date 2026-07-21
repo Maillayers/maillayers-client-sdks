@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible MailLayers client SDK defect
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include API keys, tokens, customer content, or security vulnerabilities. Report vulnerabilities privately using SECURITY.md.
+  - type: input
+    id: package
+    attributes:
+      label: Package and version
+      placeholder: "@maillayers/react-email-editor@0.2.0"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Link to a sanitized reproduction or include the smallest code sample that shows the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets, customer data, and private configuration.
+          required: true

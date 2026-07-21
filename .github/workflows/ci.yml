@@ -1,0 +1,49 @@
+name: MailLayers Client SDK CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  react:
+    name: React SDK checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/react
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/react/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:phase19
+      - run: npm run build
+      - run: npm run build:publish
+      - run: node scripts/test-package-quality.mjs
+      - run: node scripts/test-package-consumers.mjs
+      - run: npm run test:framework-consumers
+      - run: npm pack --dry-run
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: docker://ghcr.io/gitleaks/gitleaks:v8.30.1
+        with:
+          args: detect --source=. --redact=100 --verbose

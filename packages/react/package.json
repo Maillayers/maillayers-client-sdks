@@ -1,0 +1,92 @@
+{
+  "name": "@maillayers/react-email-editor",
+  "version": "0.2.0",
+  "description": "React SDK for embedding the MailLayers email editor",
+  "license": "MIT",
+  "author": "MailLayers",
+  "homepage": "https://docs.maillayers.com/react",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maillayers/maillayers-client-sdks.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/Maillayers/maillayers-client-sdks/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./license": {
+      "types": "./dist/license-entry.d.ts",
+      "import": "./dist/license-entry.js",
+      "require": "./dist/license-entry.cjs"
+    }
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:publish": "tsup --config tsup.publish.config.ts",
+    "clean": "rm -rf dist",
+    "dev": "tsup --watch",
+    "test:license": "npm run build && node scripts/test-license.mjs",
+    "test:phase19": "npm run build && node scripts/test-license-security.mjs && node scripts/test-license-iframe.mjs && node scripts/test-origin-security.mjs && node scripts/test-origin-component.mjs && node scripts/test-default-endpoint.mjs && node scripts/test-prop-validation.mjs && node scripts/test-prop-component.mjs && node scripts/test-protocol-security.mjs && node scripts/test-protocol-component.mjs && node scripts/test-callback-security.mjs && node scripts/test-callback-component.mjs && node scripts/test-lifecycle-component.mjs && node scripts/test-asset-security.mjs && node scripts/test-asset-component.mjs && node scripts/test-package-consumers.mjs && node scripts/test-package-quality.mjs && node scripts/test-phase19.mjs",
+    "test:editor-endpoint:live": "npm run build && node scripts/test-default-endpoint-live.mjs",
+    "test:framework-consumers": "node scripts/test-framework-consumers.mjs",
+    "test": "npm run test:phase19",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run build:publish",
+    "prepublishOnly": "npm run lint && npm test && npm run typecheck && npm run build:publish"
+  },
+  "keywords": [
+    "maillayers",
+    "email",
+    "builder",
+    "react",
+    "sdk",
+    "iframe",
+    "template"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1",
+    "picomatch": "^4.0.4",
+    "postcss": "^8.5.10"
+  },
+  "devDependencies": {
+    "@types/react-dom19": "npm:@types/react-dom@19.2.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.5",
+    "@types/react19": "npm:@types/react@19.2.16",
+    "jsdom": "^29.1.1",
+    "next": "^15.5.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-dom18": "npm:react-dom@18.3.1",
+    "react18": "npm:react@18.3.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^8.1.5"
+  }
+}
