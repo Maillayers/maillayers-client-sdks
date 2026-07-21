@@ -6,15 +6,26 @@
   "license": "MIT",
   "packageManager": "npm@10.8.2",
   "workspaces": [
-    "packages/react"
+    "packages/react",
+    "packages/shared",
+    "packages/vue",
+    "packages/svelte",
+    "packages/angular"
   ],
   "scripts": {
-    "lint": "npm run lint -w @maillayers/react-email-editor",
-    "typecheck": "npm run typecheck -w @maillayers/react-email-editor",
-    "test": "npm test -w @maillayers/react-email-editor",
-    "build": "npm run build -w @maillayers/react-email-editor",
-    "build:publish": "npm run build:publish -w @maillayers/react-email-editor",
-    "verify:react": "npm run lint && npm run typecheck && npm test && npm run build:publish"
+    "lint": "npm run lint -w @maillayers/shared && npm run lint -w @maillayers/react-email-editor && npm run lint -w @maillayers/vue-email-editor && npm run lint -w @maillayers/svelte-email-editor && npm run lint -w @maillayers/angular-email-editor",
+    "typecheck": "npm run typecheck -w @maillayers/shared && npm run typecheck -w @maillayers/react-email-editor && npm run typecheck -w @maillayers/vue-email-editor && npm run typecheck -w @maillayers/svelte-email-editor && npm run typecheck -w @maillayers/angular-email-editor",
+    "test": "npm test -w @maillayers/shared && npm test -w @maillayers/vue-email-editor && npm test -w @maillayers/svelte-email-editor && npm test -w @maillayers/angular-email-editor",
+    "build": "npm run build -w @maillayers/vue-email-editor && npm run build -w @maillayers/svelte-email-editor && npm run build -w @maillayers/angular-email-editor",
+    "build:publish": "npm run build:publish -w @maillayers/vue-email-editor && npm run build:publish -w @maillayers/svelte-email-editor && npm run build:publish -w @maillayers/angular-email-editor",
+    "verify:shared": "npm run lint -w @maillayers/shared && npm run typecheck -w @maillayers/shared && npm test -w @maillayers/shared",
+    "verify:react": "npm run lint -w @maillayers/react-email-editor && npm run typecheck -w @maillayers/react-email-editor && npm test -w @maillayers/react-email-editor && npm run build:publish -w @maillayers/react-email-editor",
+    "verify:vue": "npm run lint -w @maillayers/vue-email-editor && npm run typecheck -w @maillayers/vue-email-editor && npm test -w @maillayers/vue-email-editor && npm run build:publish -w @maillayers/vue-email-editor",
+    "verify:svelte": "npm run lint -w @maillayers/svelte-email-editor && npm run typecheck -w @maillayers/svelte-email-editor && npm test -w @maillayers/svelte-email-editor && npm run build:publish -w @maillayers/svelte-email-editor",
+    "verify:angular": "npm run lint -w @maillayers/angular-email-editor && npm run typecheck -w @maillayers/angular-email-editor && npm test -w @maillayers/angular-email-editor && npm run build:publish -w @maillayers/angular-email-editor",
+    "test:production-frameworks": "node scripts/test-production-frameworks.mjs"
   },
-  "devDependencies": {}
+  "overrides": {
+    "typescript": "5.7.3"
+  }
 }
