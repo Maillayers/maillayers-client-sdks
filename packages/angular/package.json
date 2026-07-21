@@ -1,0 +1,80 @@
+{
+  "name": "@maillayers/angular-email-editor",
+  "version": "0.1.0",
+  "description": "Angular SDK for embedding the MailLayers email editor",
+  "license": "MIT",
+  "author": "MailLayers",
+  "homepage": "https://docs.maillayers.com/angular",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maillayers/maillayers-client-sdks.git",
+    "directory": "packages/angular"
+  },
+  "bugs": {
+    "url": "https://github.com/Maillayers/maillayers-client-sdks/issues"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/fesm2022",
+    "dist/*.d.ts",
+    "dist/shared",
+    "LICENSE",
+    "README.md"
+  ],
+  "main": "./dist/fesm2022/maillayers-angular-email-editor.mjs",
+  "module": "./dist/fesm2022/maillayers-angular-email-editor.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/fesm2022/maillayers-angular-email-editor.mjs"
+    }
+  },
+  "scripts": {
+    "sync:shared": "node ../../scripts/sync-shared.mjs packages/angular/src/shared",
+    "build": "npm run sync:shared && ng-packagr -p ng-package.json -c tsconfig.lib.json && node scripts/sanitize-dist.mjs",
+    "build:publish": "npm run build",
+    "clean": "rm -rf dist src/shared out-tsc",
+    "test": "npm run sync:shared && npm run build && node scripts/test-component.mjs && node scripts/test-package-consumers.mjs",
+    "lint": "npm run sync:shared && node scripts/lint.mjs",
+    "typecheck": "npm run sync:shared && tsc --noEmit",
+    "prepack": "npm run build:publish",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build:publish"
+  },
+  "keywords": [
+    "maillayers",
+    "email",
+    "builder",
+    "angular",
+    "sdk",
+    "iframe",
+    "template"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@angular/common": ">=18.0.0 <21.0.0",
+    "@angular/core": ">=18.0.0 <21.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/common": "^19.2.0",
+    "@angular/compiler": "^19.2.0",
+    "@angular/compiler-cli": "^19.2.25",
+    "@angular/core": "^19.2.0",
+    "@angular/platform-browser": "^19.2.0",
+    "esbuild": "^0.28.1",
+    "jsdom": "^29.1.1",
+    "ng-packagr": "^19.2.2",
+    "rxjs": "^7.8.1",
+    "typescript": "~5.7.3",
+    "vite": "^6.0.7",
+    "zone.js": "^0.15.0"
+  }
+}
