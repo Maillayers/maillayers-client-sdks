@@ -1,0 +1,72 @@
+{
+  "name": "@maillayers/svelte-email-editor",
+  "version": "0.1.0",
+  "description": "Svelte SDK for embedding the MailLayers email editor",
+  "license": "MIT",
+  "author": "MailLayers",
+  "homepage": "https://docs.maillayers.com/svelte",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maillayers/maillayers-client-sdks.git",
+    "directory": "packages/svelte"
+  },
+  "bugs": {
+    "url": "https://github.com/Maillayers/maillayers-client-sdks/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "svelte": "./dist/index.js",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "sync:shared": "node ../../scripts/sync-shared.mjs packages/svelte/src/shared",
+    "build": "npm run sync:shared && vite build && node scripts/emit-types.mjs",
+    "build:publish": "npm run build",
+    "clean": "rm -rf dist src/shared",
+    "test": "npm run sync:shared && node scripts/test-component.mjs && node scripts/test-package-consumers.mjs",
+    "lint": "npm run sync:shared && node scripts/lint.mjs",
+    "typecheck": "npm run sync:shared && tsc --noEmit",
+    "prepack": "npm run build:publish",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build:publish"
+  },
+  "keywords": [
+    "maillayers",
+    "email",
+    "builder",
+    "svelte",
+    "sdk",
+    "iframe",
+    "template"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "svelte": ">=4.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "esbuild": "^0.28.1",
+    "jsdom": "^29.1.1",
+    "svelte": "^5.19.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7"
+  }
+}
