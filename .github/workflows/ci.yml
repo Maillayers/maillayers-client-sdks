@@ -23,8 +23,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: packages/react/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
+        working-directory: .
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -38,6 +39,63 @@ jobs:
         run: npm pack
       - run: npm run test:framework-consumers
       - run: npm pack --dry-run
+
+  vue:
+    name: Vue SDK checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run lint -w @maillayers/vue-email-editor
+      - run: npm run typecheck -w @maillayers/vue-email-editor
+      - run: npm test -w @maillayers/vue-email-editor
+      - run: npm run build:publish -w @maillayers/vue-email-editor
+      - run: npm pack --dry-run -w @maillayers/vue-email-editor --ignore-scripts
+
+  angular:
+    name: Angular SDK checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run lint -w @maillayers/angular-email-editor
+      - run: npm run typecheck -w @maillayers/angular-email-editor
+      - run: npm test -w @maillayers/angular-email-editor
+      - run: npm run build:publish -w @maillayers/angular-email-editor
+      - run: npm pack --dry-run -w @maillayers/angular-email-editor --ignore-scripts
+
+  svelte:
+    name: Svelte SDK checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run lint -w @maillayers/svelte-email-editor
+      - run: npm run typecheck -w @maillayers/svelte-email-editor
+      - run: npm test -w @maillayers/svelte-email-editor
+      - run: npm run build:publish -w @maillayers/svelte-email-editor
+      - run: npm pack --dry-run -w @maillayers/svelte-email-editor --ignore-scripts
 
   secrets:
     name: Secret scan
