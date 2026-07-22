@@ -58,13 +58,14 @@ export interface EmailBuilderProps {
   /** Trigger used to open merge tag suggestions (defaults to '@'). */
   mergeTagTrigger?: string;
   /**
-   * When set, the iframe URL includes `embedToken` so the builder can call your API.
-   * Create the token with POST /access-tokens (Bearer user JWT); the response string is the key.
+   * @deprecated No longer required. Use apiKey only.
+   * Retained for backward compatibility with existing 0.2.0 consumers.
+   * Omitting this prop is fully supported for the hosted editor protocol.
    */
   embedToken?: string;
   /**
-   * Optional: load HTML from GET /email-builder-sdk/templates/:id using the embed token
-   * instead of relying on initialHtml alone.
+   * Optional template id for builder-side template loading when supported.
+   * Prefer `initialHtml` for typical hosted embeds.
    */
   templateId?: string;
   config?: BuilderConfig;
@@ -105,7 +106,7 @@ export interface EmailBuilderProps {
   onDeleteAsset?: DeleteAssetHandler;
   onReady?: () => void;
   onStatusChange?: (status: EmailBuilderStatus) => void;
-  /** Called when the embedded builder rejects the embed token. */
+  /** Called when authorization fails or the embedded builder reports an auth error. */
   onAuthError?: (message: string) => void;
   /**
    * Optional explicit origin assertion. It must be an origin-only HTTP(S) URL,
