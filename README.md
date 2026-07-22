@@ -66,7 +66,7 @@ export default function EditorPage() {
 
 ## API Keys and Allowed Domains
 
-Production usage requires a MailLayers API key whose allowed domains include the application origin. Local development origins such as `localhost`, `127.0.0.1`, and `[::1]` are supported for development flows.
+`apiKey` is the only required MailLayers credential. Production usage requires a MailLayers API key whose allowed domains include the application origin. Browser exposure of this SDK API key is expected; security is enforced through API-key status and allowed-origin validation. Do not place unrelated backend secrets in client environment variables. Local development origins such as `localhost`, `127.0.0.1`, and `[::1]` are supported for development flows.
 
 ## Asset Callbacks
 

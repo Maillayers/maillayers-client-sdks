@@ -33,7 +33,7 @@ export interface InitPayload {
   mergeTags?: Array<{ label: string; value: string }>;
   /** Trigger used to open merge tag suggestions (defaults to '@'). */
   mergeTagTrigger?: string;
-  /** When set, embedded builder fetches HTML from API using embed token + this id. */
+  /** Optional template id for builder-side template loading when supported. */
   templateId?: string;
   config?: BuilderConfig;
   /**
