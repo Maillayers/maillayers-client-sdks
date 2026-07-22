@@ -46,7 +46,7 @@ async function linkPackage(source, consumerNodeModules, name) {
 }
 
 try {
-  run('npm', ['run', 'build:publish']);
+  if (process.env.ML_SKIP_BUILD !== '1') run('npm', ['run', 'build:publish']);
   const packOutput = run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary]);
   const pack = JSON.parse(packOutput)[0];
   const tarball = resolve(temporary, pack.filename);

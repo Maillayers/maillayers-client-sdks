@@ -112,7 +112,7 @@ class Cdp {
 
 const apiKey = await readApiKey();
 console.log('Building and packing @maillayers/angular-email-editor...');
-run('npm', ['run', 'build:publish', '-w', '@maillayers/angular-email-editor'], root);
+if (process.env.ML_SKIP_BUILD !== '1') run('npm', ['run', 'build:publish', '-w', '@maillayers/angular-email-editor'], root);
 const packDir = resolve(temporary, 'pack');
 await mkdir(packDir, { recursive: true });
 run('npm', ['pack', '-w', '@maillayers/angular-email-editor', '--ignore-scripts', '--pack-destination', packDir], root);
@@ -415,8 +415,11 @@ const ready = await waitFor(
       bootError: window.__bootError || null,
     } : null;
   })()`,
-  (value) => value && !value.bootError && value.ready.includes('A') && value.ready.includes('B') && value.inits.length >= 2,
+  (value) => value && !value.bootError
+    && value.ready.includes('A') && value.ready.includes('B') && value.ready.includes('M')
+    && value.inits.length >= 3,
   'Angular production READY/INIT handshake failed',
+  120000,
 );
 
 assert.ok(ready.srcs.every((src) => src === 'https://editor.maillayers.com' || src?.startsWith('https://editor.maillayers.com')), 'iframes must load production editor');
