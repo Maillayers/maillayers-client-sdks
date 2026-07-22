@@ -35,8 +35,8 @@
   },
   "scripts": {
     "sync:shared": "node ../../scripts/sync-shared.mjs packages/vue/src/shared",
-    "build": "npm run sync:shared && tsup",
-    "build:publish": "npm run sync:shared && tsup",
+    "build": "node init && npm run sync:shared && tsup",
+    "build:publish": "node init && npm run sync:shared && tsup",
     "clean": "rm -rf dist src/shared",
     "test": "npm run sync:shared && node scripts/test-component.mjs && node scripts/test-package-consumers.mjs",
     "lint": "npm run sync:shared && node scripts/lint.mjs",

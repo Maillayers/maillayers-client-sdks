@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspaceRoot = resolve(root, '../..');
-const tarball = resolve(root, process.argv[2] ?? 'maillayers-react-email-editor-0.2.0.tgz');
+const packageJson = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
+const expectedTarball = `maillayers-react-email-editor-${packageJson.version}.tgz`;
+const tarball = resolve(root, process.argv[2] ?? expectedTarball);
 const temporary = await mkdtemp(resolve(tmpdir(), 'maillayers-framework-consumers-'));
 const cache = resolve(temporary, 'npm-cache');
 const sdkModules = existsSync(resolve(root, 'node_modules/react/package.json'))
@@ -140,7 +142,7 @@ async function createSecurityHarness() {
 }
 
 try {
-  assert.equal(basename(tarball), 'maillayers-react-email-editor-0.2.0.tgz');
+  assert.equal(basename(tarball), expectedTarball);
   await readFile(tarball);
   await createSecurityHarness();
   console.log('PASS\tsdk-security-harness source builds against the new tarball in a clean React 18 install');

@@ -17,58 +17,17 @@ export function EmailEditor() {
   return (
     <div style={{ height: '100vh' }}>
       <MailLayersEmailEditor
-        apiKey={process.env.NEXT_PUBLIC_MAILLAYERS_API_KEY}
-        embedToken={process.env.NEXT_PUBLIC_EMAIL_BUILDER_TOKEN}
-        initialHtml="<h1>Welcome</h1><p>Edit this email template</p>"
+        apiKey={process.env.NEXT_PUBLIC_MAILLAYERS_API_KEY!}
+        initialHtml="<h1>Welcome</h1><p>Edit this email template.</p>"
         themeMode="system"
-        theme={{
-          tenantId: "acme",
-          light: {
-            primary: "220 90% 56%",
-            secondary: "220 12% 45%",
-            accent: "188 94% 43%",
-            success: "142 72% 36%",
-            warning: "35 92% 50%",
-            error: "0 84% 60%",
-            background: "0 0% 100%",
-            surface: "0 0% 100%",
-            border: "220 14% 90%",
-            text: "222 84% 5%",
-          },
-          dark: {
-            primary: "220 90% 70%",
-            secondary: "220 10% 70%",
-            accent: "188 80% 62%",
-            success: "142 70% 50%",
-            warning: "40 96% 62%",
-            error: "0 80% 68%",
-            background: "222 47% 11%",
-            surface: "222 39% 14%",
-            border: "217 19% 27%",
-            text: "210 40% 96%",
-          },
+        onChange={(html) => {
+          console.log(html);
         }}
-        footerInjectionMode="sdk"
-        externalFooterHtml="<div>Custom footer</div>"
-        onAuthError={(message) => console.error('auth failed', message)}
-        onChange={(html) => console.log('changed', html)}
-        onSave={(html) => console.log('saved', html)}
-        onUpload={async (file) => {
-          const body = new FormData();
-          body.append('asset', file);
-          const response = await fetch('/api/uploads', { method: 'POST', body });
-          const data = await response.json();
-          return data.url;
+        onSave={(html) => {
+          console.log(html);
         }}
-        onListAssets={async () => {
-          const response = await fetch('/api/assets');
-          const data = await response.json();
-          return data.assets;
-        }}
-        onDeleteAsset={async ({ id }) => {
-          if (!id) return false;
-          const response = await fetch(`/api/assets/${id}`, { method: 'DELETE' });
-          return response.ok;
+        onAuthError={(error) => {
+          console.error(error);
         }}
       />
     </div>
@@ -79,16 +38,25 @@ export function EmailEditor() {
 If `initialHtml` is not provided, the editor starts with a default Hello World template.
 If `src` is not provided, the SDK uses the managed MailLayers builder endpoint.
 
+## Credentials and security
+
+`apiKey` is the only required MailLayers credential for this SDK.
+
+- Configure the customer application domain as an allowed origin for that API key.
+- Browser exposure of this SDK API key is expected for hosted embeds.
+- Security is enforced through API-key status and allowed-origin validation.
+- Do not place unrelated backend secrets in client environment variables such as
+  `NEXT_PUBLIC_*` or `VITE_*`.
+
 ## Props
 
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
 | `apiKey` | `string` | Yes | MailLayers SDK API key used to validate licensed usage. |
 | `licenseValidationUrl` | `string` | No | Optional validation API base URL or exact validation endpoint for authorized self-hosted/test environments. |
-| `embedToken` | `string` | Yes | Token passed to iframe for backend verification. |
 | `src` | `string` | No | Optional trusted custom builder URL. HTTPS is required except on loopback development hosts. |
 | `initialHtml` | `string` | No | Initial HTML content to load in the editor. |
-| `templateId` | `string` | No | Optional template id; builder fetches HTML from backend when provided. |
+| `templateId` | `string` | No | Optional template id for builder-side template loading when supported. |
 | `externalFooterHtml` | `string` | No | Optional host-provided footer HTML snippet. |
 | `footerInjectionMode` | `'default' \| 'sdk'` | No | Footer source mode. Use `'sdk'` to apply `externalFooterHtml`. |
 | `theme` | `ThemeDefinition` | No | Runtime tenant theme with `light` and `dark` token sets. |
@@ -107,7 +75,7 @@ If `src` is not provided, the SDK uses the managed MailLayers builder endpoint.
 | `onUpload` | `(file: File, context: AssetRequestContext) => Promise<string>` | No | Upload handler that returns an absolute public HTTPS URL. |
 | `onListAssets` | `(payload: { limit?: number } \| undefined, context: AssetRequestContext) => Promise<AssetItem[]>` | No | Returns a bounded, strictly validated image list. |
 | `onDeleteAsset` | `(payload: { id?: string; url?: string }, context: AssetRequestContext) => Promise<boolean>` | No | Deletes an asset; only literal `true` reports success. |
-| `onAuthError` | `(message: string) => void` | No | Called when token is missing/invalid/rejected. |
+| `onAuthError` | `(message: string) => void` | No | Called when authorization fails or the editor reports an auth error. |
 
 `AssetItem` shape:
 
