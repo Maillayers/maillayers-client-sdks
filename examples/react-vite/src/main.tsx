@@ -37,6 +37,9 @@ function App() {
         ref={editorRef}
         apiKey={import.meta.env.VITE_MAILLAYERS_API_KEY}
         initialHtml="<h1>Hello from MailLayers</h1>"
+        loadingFallback={
+          <div style={{ padding: 24, textAlign: "center" }}>Loading editor…</div>
+        }
         // exportUi={true} // optionally show hosted Export UI in embedded mode
         onSave={(html) => console.log("saved", html.length)}
       />

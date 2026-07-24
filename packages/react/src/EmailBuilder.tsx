@@ -44,11 +44,20 @@ const overlayStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  background: 'rgba(250, 250, 250, 0.94)',
+  color: '#0f172a',
+  zIndex: 2,
+};
+
+const overlayErrorStyle: CSSProperties = {
+  ...overlayStyle,
+  padding: 24,
+  textAlign: 'center',
   fontSize: '0.875rem',
   fontWeight: 500,
-  background: 'linear-gradient(135deg, rgba(9,9,9,0.65), rgba(33,33,33,0.85))',
+  lineHeight: 1.4,
+  background: 'rgba(15, 23, 42, 0.88)',
   color: '#fff',
-  zIndex: 2,
 };
 
 const iframeStyle: CSSProperties = {
@@ -56,6 +65,76 @@ const iframeStyle: CSSProperties = {
   width: '100%',
   height: '100%',
 };
+
+const DEFAULT_LOADING_LABEL = 'Loading editor';
+
+function DefaultLoadingIndicator({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label={label}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 28 28"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <circle
+          cx="14"
+          cy="14"
+          r="11"
+          fill="none"
+          stroke="rgba(15, 23, 42, 0.14)"
+          strokeWidth="2.5"
+        />
+        <circle
+          cx="14"
+          cy="14"
+          r="11"
+          fill="none"
+          stroke="rgba(15, 23, 42, 0.55)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray="52"
+          strokeDashoffset="36"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 14 14"
+            to="360 14 14"
+            dur="0.8s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      </svg>
+      <span
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
 
 function appendPreviewParamsToSrc(src: string, preview: boolean): string {
   if (!preview) {
@@ -130,6 +209,8 @@ function EmailBuilderInner(
     className,
     style,
     hideLoadingOverlay = false,
+    loadingFallback,
+    loadingLabel,
     iframeTitle = 'Email Builder',
     sandbox = DEFAULT_SANDBOX,
     exportUi = false,
@@ -151,6 +232,7 @@ function EmailBuilderInner(
     footerInjectionMode, themeMode, theme, config, mergeTags, mergeTagTrigger,
     templateId, tenantId, expectedOrganizationId, expectedLicenseId, style,
     sandbox, iframeTitle, preview, previewOnly, className, hideLoadingOverlay, exportUi,
+    loadingLabel,
     onChange, onLoad, onSave, onUpload, onListAssets, onDeleteAsset, onReady,
     onStatusChange, onAuthError,
   }), [
@@ -158,6 +240,7 @@ function EmailBuilderInner(
     footerInjectionMode, themeMode, theme, config, mergeTags, mergeTagTrigger,
     templateId, tenantId, expectedOrganizationId, expectedLicenseId, style,
     sandbox, iframeTitle, preview, previewOnly, className, hideLoadingOverlay, exportUi,
+    loadingLabel,
     onChange, onLoad, onSave, onUpload, onListAssets, onDeleteAsset, onReady,
     onStatusChange, onAuthError,
   ]);
@@ -779,6 +862,12 @@ function EmailBuilderInner(
     };
   }, [rejectPendingDataRequests, resetAssetRequests]);
 
+  const errorMessage = propError || originError || licenseError;
+  const accessibleLoadingLabel =
+    typeof loadingLabel === 'string' && loadingLabel.trim()
+      ? loadingLabel.trim()
+      : DEFAULT_LOADING_LABEL;
+
   return (
     <div className={propError ? undefined : className} style={{ position: 'relative', width: '100%', height: '100%', ...safeStyle }}>
       <iframe
@@ -793,8 +882,12 @@ function EmailBuilderInner(
         onLoad={handleIframeLoad}
       />
       {!hideLoadingOverlay && status !== 'ready' && (
-        <div style={overlayStyle}>
-          {propError || originError || licenseError || 'Connecting to builder...'}
+        <div style={errorMessage ? overlayErrorStyle : overlayStyle}>
+          {errorMessage
+            ? errorMessage
+            : loadingFallback !== undefined
+              ? loadingFallback
+              : <DefaultLoadingIndicator label={accessibleLoadingLabel} />}
         </div>
       )}
     </div>

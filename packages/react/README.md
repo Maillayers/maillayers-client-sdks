@@ -63,7 +63,9 @@ If `src` is not provided, the SDK uses the managed MailLayers builder endpoint.
 | `themeMode` | `'light' \| 'dark' \| 'system'` | No | Active theme mode for runtime rendering. |
 | `tenantId` | `string` | No | Optional tenant id used for theme scoping metadata. |
 | `config` | `Record<string, unknown>` | No | Optional builder configuration object. |
-| `hideLoadingOverlay` | `boolean` | No | Hide the SDK loading overlay. |
+| `hideLoadingOverlay` | `boolean` | No | Hide the SDK loading overlay entirely. |
+| `loadingFallback` | `React.ReactNode` | No | Custom loading UI while the editor is not ready. Defaults to a neutral built-in spinner. |
+| `loadingLabel` | `string` | No | Accessible label for the default spinner. Defaults to `Loading editor`. |
 | `exportUi` | `boolean` | No | When `true`, show the hosted editor Export button/modal. Default `false` for SDK embeds. Standalone hosted editor always shows Export. Not controllable via query params. |
 | `className` | `string` | No | Class for the wrapper container. |
 | `style` | `React.CSSProperties` | No | Inline styles for the wrapper container. |
@@ -173,8 +175,31 @@ editorRef.current?.reload();
 - `getJson(): Promise<unknown>` — Returns the current structured template JSON
   from the hosted editor without opening Export UI or restarting the handshake.
 
-Export, Copy HTML, `getHtml()`, and `getJson()` never show
-`"Connecting to builder..."` and never restart READY/INIT.
+Export, Copy HTML, `getHtml()`, and `getJson()` never show the loading overlay
+and never restart READY/INIT.
+
+### Loading UI
+
+While the editor is not ready, the SDK shows a neutral built-in spinner by
+default (no `"Connecting to builder..."` copy). Host apps can override it:
+
+```tsx
+<MailLayersEmailEditor
+  apiKey={apiKey}
+  loadingFallback={
+    <div style={{ padding: 24, textAlign: 'center' }}>
+      Loading editor…
+    </div>
+  }
+/>
+```
+
+- `loadingFallback` replaces the built-in spinner during the normal loading state.
+- `loadingLabel` customizes the default spinner's accessible label only.
+- Auth/input failures still show the existing error presentation.
+- Once the editor is ready, the loader is removed completely.
+- `hideLoadingOverlay` continues to hide the overlay entirely when the host
+  renders loading outside the component.
 
 ### Embedded vs standalone Export UI
 

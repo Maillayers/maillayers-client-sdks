@@ -229,6 +229,7 @@ export function validateEmailBuilderInputs(input: Record<string, unknown>): Runt
     if (!validString(input.className, { allowEmpty: true, maxCharacters: 1024 })) return fail('className');
     if (!validString(input.sandbox, { allowEmpty: true, maxCharacters: 1024 })) return fail('sandbox');
     if (!validString(input.iframeTitle, { maxCharacters: 256 }) || (typeof input.iframeTitle === 'string' && !input.iframeTitle.trim())) return fail('iframeTitle');
+    if (!validString(input.loadingLabel, { allowEmpty: true, maxCharacters: 256 })) return fail('loadingLabel');
     if (input.footerInjectionMode !== undefined && input.footerInjectionMode !== 'default' && input.footerInjectionMode !== 'sdk') return fail('footerInjectionMode');
     if (input.themeMode !== undefined && input.themeMode !== 'light' && input.themeMode !== 'dark' && input.themeMode !== 'system') return fail('themeMode');
     for (const prop of ['preview', 'previewOnly', 'hideLoadingOverlay', 'exportUi'] as const) {

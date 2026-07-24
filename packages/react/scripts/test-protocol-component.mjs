@@ -133,7 +133,7 @@ assert.equal(windowErrors, 0);
 console.log('PASS\tmalformed payloads for every inbound type invoke no callbacks or responses');
 console.log('PASS\taccessor/proxy messages do not throw or execute getters in the window listener');
 console.log('PASS\tvalid messages still work after malformed traffic');
-console.log('PASS\tSTATUS loading after ready does not reopen Connecting to builder');
+console.log('PASS\tSTATUS loading after ready does not reopen the loading overlay');
 
 await act(async () => { root.unmount(); });
 globalThis.fetch = originalFetch;
