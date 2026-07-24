@@ -12,8 +12,6 @@ tmp/
 *.tmp
 *.temp
 .DS_Store
-.env
-.env.*
 !.env.example
 npm-debug.log*
 yarn-debug.log*
@@ -21,3 +19,4 @@ yarn-error.log*
 pnpm-debug.log*
 packages/*/src/shared/
 packages/*/.test-dist/
+config.bat

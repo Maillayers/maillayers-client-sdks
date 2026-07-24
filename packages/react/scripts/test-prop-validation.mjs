@@ -34,7 +34,10 @@ for (const [prop, values] of Object.entries({
   for (const value of values) invalid(prop, value);
 }
 
-for (const prop of ['preview', 'previewOnly', 'hideLoadingOverlay']) invalid(prop, 'true');
+for (const prop of ['preview', 'previewOnly', 'hideLoadingOverlay', 'exportUi']) invalid(prop, 'true');
+invalid('loadingLabel', 7);
+invalid('loadingLabel', []);
+invalid('loadingLabel', 'x'.repeat(257));
 for (const prop of ['onChange', 'onLoad', 'onSave', 'onUpload', 'onListAssets', 'onDeleteAsset', 'onReady', 'onStatusChange', 'onAuthError']) invalid(prop, {});
 
 const oversizedHtml = 'é'.repeat(Math.floor(SDK_INPUT_LIMITS.htmlBytes / 2) + 1);
