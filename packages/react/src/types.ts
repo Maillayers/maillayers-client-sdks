@@ -1,5 +1,5 @@
 import type { AssetItem, BuilderConfig, BuilderStatus, DeleteAssetPayload, ListAssetsPayload } from './protocol';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 export interface AssetRequestContext {
   requestId: string;
@@ -94,6 +94,17 @@ export interface EmailBuilderProps {
   style?: CSSProperties;
   /** Hide the SDK's default iframe loading overlay so the host can render its own loader. */
   hideLoadingOverlay?: boolean;
+  /**
+   * Custom loading UI shown while the editor is not ready.
+   * When omitted, the SDK renders a neutral built-in spinner.
+   * Auth/input error messages still replace the loader when validation fails.
+   */
+  loadingFallback?: ReactNode;
+  /**
+   * Accessible label for the default loading indicator.
+   * Defaults to "Loading editor". Not shown as visible technical copy.
+   */
+  loadingLabel?: string;
   iframeTitle?: string;
   sandbox?: string;
   /**

@@ -57,8 +57,15 @@ function fixture() {
 }
 
 function overlayText(container) {
-  const overlay = [...container.querySelectorAll('div')].find((node) => node.textContent?.includes('Connecting to builder'));
-  return overlay?.textContent ?? null;
+  const overlay = [...container.querySelectorAll('div')].find((node) => {
+    const style = node.getAttribute('style') || '';
+    return style.includes('position: absolute') && style.includes('inset: 0');
+  });
+  return overlay?.textContent?.trim() || null;
+}
+
+function hasDefaultLoader(container) {
+  return Boolean(container.querySelector('[aria-label="Loading editor"], [aria-label="Preparing workspace"]'));
 }
 
 async function mountReadyEditor(options = {}) {
@@ -158,7 +165,7 @@ async function mountReadyEditor(options = {}) {
     }));
   });
   assert.equal(statuses.length, statusCount, 'STATUS loading/error must not demote handshake after ready');
-  assert.equal(overlayText(session.container), null, 'Export/data STATUS noise must not show Connecting to builder');
+  assert.equal(overlayText(session.container), null, 'Export/data STATUS noise must not show loading overlay');
 
   const concurrent = Promise.all([
     editorRef.current.getHtml(),
@@ -285,8 +292,9 @@ console.log('PASS\texportUi defaults to hidden in embedded INIT (no features.exp
     editorRef.current.reload();
   });
   await waitFor(() => statuses.at(-1) === 'loading', 'reload must restart handshake loading');
-  assert.ok(overlayText(session.container)?.includes('Connecting to builder'));
+  assert.equal(overlayText(session.container)?.includes('Connecting to builder'), false);
+  assert.ok(hasDefaultLoader(session.container), 'reload loading state must show the neutral default loader');
   assert.ok(iframe);
   await session.close();
 }
-console.log('PASS\texplicit reload restarts the handshake and may show Connecting to builder');
+console.log('PASS\texplicit reload restarts the handshake with the neutral default loader');
