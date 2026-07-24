@@ -96,6 +96,12 @@ export interface EmailBuilderProps {
   hideLoadingOverlay?: boolean;
   iframeTitle?: string;
   sandbox?: string;
+  /**
+   * When true, the hosted editor shows its Export button and modal in embedded mode.
+   * Default: false (Export UI is hidden for SDK embeds). Standalone hosted editor
+   * always shows Export. Not controllable via query parameters.
+   */
+  exportUi?: boolean;
   onChange?: (html: string) => void;
   /** Called once after the editor finishes processing the initially imported HTML.
    * Updates internal state without marking the template as user-modified. */
@@ -118,4 +124,11 @@ export interface EmailBuilderProps {
 export interface EmailBuilderHandle {
   /** Starts a new iframe handshake using the latest validated initial props. */
   reload: () => void;
+  /** Returns the current exportable HTML from the hosted editor. */
+  getHtml: () => Promise<string>;
+  /** Returns the current structured template JSON from the hosted editor. */
+  getJson: () => Promise<unknown>;
 }
+
+/** Public imperative ref API for `MailLayersEmailEditor`. */
+export type MailLayersEmailEditorRef = EmailBuilderHandle;

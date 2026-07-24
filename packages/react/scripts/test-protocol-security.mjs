@@ -19,8 +19,18 @@ const validInbound = [
   { type: 'DELETE_ASSET', payload: { url: 'https://assets.example.com/asset.png' }, meta },
   { type: 'AUTH_ERROR', payload: { message: 'Synthetic auth failure' }, meta },
   { type: 'STATUS', payload: { status: 'ready' }, meta },
+  { type: 'HTML_RESULT', payload: { html: '<p>html</p>' }, meta },
+  { type: 'JSON_RESULT', payload: { json: { id: 'tpl' } }, meta },
+  { type: 'DATA_ERROR', payload: { message: 'Export failed' }, meta },
 ];
 for (const message of validInbound) assert.equal(isMessageLike(message), true, `valid ${message.type}`);
+
+const validOutboundExtra = [
+  { type: 'GET_HTML', meta },
+  { type: 'GET_JSON', meta },
+  { type: 'INIT', payload: { html: '<p>x</p>', features: { exportUi: true } }, meta },
+];
+for (const message of validOutboundExtra) assert.equal(isMessageLike(message), true, `valid ${message.type}`);
 
 const malformedByType = {
   READY: [
@@ -91,6 +101,34 @@ const malformedByType = {
     { type: 'STATUS', payload: { status: 'saving' } },
     { type: 'STATUS', payload: { status: 'ready', extra: true } },
   ],
+  HTML_RESULT: [
+    { type: 'HTML_RESULT' },
+    { type: 'HTML_RESULT', payload: null },
+    { type: 'HTML_RESULT', payload: { html: 7 } },
+    { type: 'HTML_RESULT', payload: { html: '<p>x</p>', extra: true } },
+  ],
+  JSON_RESULT: [
+    { type: 'JSON_RESULT' },
+    { type: 'JSON_RESULT', payload: null },
+    { type: 'JSON_RESULT', payload: {} },
+    { type: 'JSON_RESULT', payload: { json: undefined } },
+    { type: 'JSON_RESULT', payload: { json: { id: 'x' }, extra: true } },
+  ],
+  DATA_ERROR: [
+    { type: 'DATA_ERROR' },
+    { type: 'DATA_ERROR', payload: null },
+    { type: 'DATA_ERROR', payload: { message: '' } },
+    { type: 'DATA_ERROR', payload: { message: 7 } },
+  ],
+  GET_HTML: [
+    { type: 'GET_HTML', payload: {} },
+    { type: 'GET_HTML', payload: null, meta },
+    { type: 'GET_HTML' },
+  ],
+  GET_JSON: [
+    { type: 'GET_JSON', payload: {} },
+    { type: 'GET_JSON' },
+  ],
 };
 
 for (const [type, messages] of Object.entries(malformedByType)) {
@@ -123,13 +161,18 @@ const validOutbound = [
   { type: 'UPLOAD_SUCCESS', payload: { url: '' }, meta },
   { type: 'ASSETS_LIST', payload: { assets: [] }, meta },
   { type: 'DELETE_ASSET_SUCCESS', payload: { success: false }, meta },
+  { type: 'GET_HTML', meta },
+  { type: 'GET_JSON', meta },
 ];
 for (const message of validOutbound) assert.equal(isMessageLike(message), true, `valid outbound ${message.type}`);
 for (const message of [
   { type: 'INIT', payload: { config: [] } },
+  { type: 'INIT', payload: { features: { exportUi: 'yes' } } },
   { type: 'UPLOAD_SUCCESS', payload: { url: 7 } },
   { type: 'ASSETS_LIST', payload: { assets: [{}] } },
   { type: 'DELETE_ASSET_SUCCESS', payload: { success: 1 } },
+  { type: 'GET_HTML', payload: {}, meta },
+  { type: 'GET_JSON', payload: {}, meta },
 ]) assert.equal(isMessageLike(message), false);
 
 console.log(`PASS\texact valid schemas for ${validInbound.length} inbound message variants`);

@@ -63,6 +63,8 @@ If `src` is not provided, the SDK uses the managed MailLayers builder endpoint.
 | `themeMode` | `'light' \| 'dark' \| 'system'` | No | Active theme mode for runtime rendering. |
 | `tenantId` | `string` | No | Optional tenant id used for theme scoping metadata. |
 | `config` | `Record<string, unknown>` | No | Optional builder configuration object. |
+| `hideLoadingOverlay` | `boolean` | No | Hide the SDK loading overlay. |
+| `exportUi` | `boolean` | No | When `true`, show the hosted editor Export button/modal. Default `false` for SDK embeds. Standalone hosted editor always shows Export. Not controllable via query params. |
 | `className` | `string` | No | Class for the wrapper container. |
 | `style` | `React.CSSProperties` | No | Inline styles for the wrapper container. |
 | `iframeTitle` | `string` | No | Accessible title for the iframe. |
@@ -148,8 +150,38 @@ The SDK stays storage-agnostic (S3, GCS, Cloudflare R2, etc.).
 
 `MailLayersEmailEditor` supports a ref with:
 
-- `reload(): void` - Starts a new iframe handshake using the latest validated
+```tsx
+import { useRef } from 'react';
+import {
+  MailLayersEmailEditor,
+  type MailLayersEmailEditorRef,
+} from '@maillayers/react-email-editor';
+
+const editorRef = useRef<MailLayersEmailEditorRef>(null);
+
+<MailLayersEmailEditor ref={editorRef} apiKey={apiKey} />;
+
+const html = await editorRef.current?.getHtml();
+const json = await editorRef.current?.getJson();
+editorRef.current?.reload();
+```
+
+- `reload(): void` — Starts a new iframe handshake using the latest validated
   initial-content/config props.
+- `getHtml(): Promise<string>` — Returns the current exportable HTML from the
+  hosted editor without opening Export UI or restarting the handshake.
+- `getJson(): Promise<unknown>` — Returns the current structured template JSON
+  from the hosted editor without opening Export UI or restarting the handshake.
+
+Export, Copy HTML, `getHtml()`, and `getJson()` never show
+`"Connecting to builder..."` and never restart READY/INIT.
+
+### Embedded vs standalone Export UI
+
+- Standalone `editor.maillayers.com` (direct browser visit): Export UI visible.
+- Embedded SDK mode: Export UI hidden by default.
+- Embedded consumers may opt in with `exportUi={true}` (sent securely through INIT
+  `features.exportUi`). Query parameters cannot enable Export UI.
 
 Initial-content props (`initialHtml`, merge tags, config, template/footer, and theme
 inputs) are immutable for an active iframe handshake. Changing them after READY

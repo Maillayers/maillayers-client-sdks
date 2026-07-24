@@ -231,7 +231,7 @@ export function validateEmailBuilderInputs(input: Record<string, unknown>): Runt
     if (!validString(input.iframeTitle, { maxCharacters: 256 }) || (typeof input.iframeTitle === 'string' && !input.iframeTitle.trim())) return fail('iframeTitle');
     if (input.footerInjectionMode !== undefined && input.footerInjectionMode !== 'default' && input.footerInjectionMode !== 'sdk') return fail('footerInjectionMode');
     if (input.themeMode !== undefined && input.themeMode !== 'light' && input.themeMode !== 'dark' && input.themeMode !== 'system') return fail('themeMode');
-    for (const prop of ['preview', 'previewOnly', 'hideLoadingOverlay'] as const) {
+    for (const prop of ['preview', 'previewOnly', 'hideLoadingOverlay', 'exportUi'] as const) {
       if (input[prop] !== undefined && typeof input[prop] !== 'boolean') return fail(prop);
     }
     for (const prop of ['onChange', 'onLoad', 'onSave', 'onUpload', 'onListAssets', 'onDeleteAsset', 'onReady', 'onStatusChange', 'onAuthError'] as const) {
