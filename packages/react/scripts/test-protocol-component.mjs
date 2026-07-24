@@ -126,14 +126,14 @@ assert.ok(posts.some((entry) => entry.message.type === 'DELETE_ASSET_SUCCESS'));
 
 const statusCount = statuses.length;
 await act(async () => { send({ type: 'STATUS', payload: { status: 'loading' }, meta: meta('status') }); });
-assert.equal(statuses.length, statusCount + 1);
-assert.equal(statuses.at(-1), 'loading');
+assert.equal(statuses.length, statusCount, 'STATUS loading after ready must not demote handshake state');
+assert.equal(statuses.at(-1), 'ready');
 assert.equal(windowErrors, 0);
 
 console.log('PASS\tmalformed payloads for every inbound type invoke no callbacks or responses');
 console.log('PASS\taccessor/proxy messages do not throw or execute getters in the window listener');
 console.log('PASS\tvalid messages still work after malformed traffic');
-console.log('PASS\tvalidated STATUS messages use the controlled status path');
+console.log('PASS\tSTATUS loading after ready does not reopen Connecting to builder');
 
 await act(async () => { root.unmount(); });
 globalThis.fetch = originalFetch;

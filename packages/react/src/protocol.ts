@@ -15,7 +15,12 @@ export type MessageType =
   | 'DELETE_ASSET'
   | 'DELETE_ASSET_SUCCESS'
   | 'AUTH_ERROR'
-  | 'STATUS';
+  | 'STATUS'
+  | 'GET_HTML'
+  | 'HTML_RESULT'
+  | 'GET_JSON'
+  | 'JSON_RESULT'
+  | 'DATA_ERROR';
 
 export interface MessageMeta {
   id: string;
@@ -25,6 +30,11 @@ export interface MessageMeta {
 }
 
 export type BuilderConfig = Record<string, unknown> | undefined;
+
+export interface InitFeatures {
+  /** When true, show the hosted Export button/modal in embedded mode. Default false when embedded. */
+  exportUi?: boolean;
+}
 
 export interface InitPayload {
   /** Inline HTML to import (optional if templateId is set and builder fetches server-side). */
@@ -47,6 +57,11 @@ export interface InitPayload {
    * - `sdk`: builder uses `externalFooterHtml` (and should avoid importing/auto-generating footer).
    */
   footerInjectionMode?: 'default' | 'sdk';
+  /**
+   * Secure feature configuration for the hosted editor.
+   * Not controllable via query parameters.
+   */
+  features?: InitFeatures;
 }
 
 export interface ChangePayload {
@@ -102,6 +117,18 @@ export interface StatusPayload {
   status: BuilderStatus;
 }
 
+export interface HtmlResultPayload {
+  html: string;
+}
+
+export interface JsonResultPayload {
+  json: unknown;
+}
+
+export interface DataErrorPayload {
+  message: string;
+}
+
 export type BuilderStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export type Message =
@@ -117,16 +144,35 @@ export type Message =
   | { type: 'DELETE_ASSET'; payload: DeleteAssetPayload; meta?: MessageMeta }
   | { type: 'DELETE_ASSET_SUCCESS'; payload: DeleteAssetSuccessPayload; meta?: MessageMeta }
   | { type: 'AUTH_ERROR'; payload: AuthErrorPayload; meta?: MessageMeta }
-  | { type: 'STATUS'; payload: StatusPayload; meta?: MessageMeta };
+  | { type: 'STATUS'; payload: StatusPayload; meta?: MessageMeta }
+  | { type: 'GET_HTML'; meta?: MessageMeta }
+  | { type: 'HTML_RESULT'; payload: HtmlResultPayload; meta?: MessageMeta }
+  | { type: 'GET_JSON'; meta?: MessageMeta }
+  | { type: 'JSON_RESULT'; payload: JsonResultPayload; meta?: MessageMeta }
+  | { type: 'DATA_ERROR'; payload: DataErrorPayload; meta?: MessageMeta };
 
 export type BuilderToHostMessage = Extract<
   Message,
-  { type: 'READY' | 'CHANGE' | 'LOADED' | 'SAVE' | 'UPLOAD' | 'LIST_ASSETS' | 'DELETE_ASSET' | 'AUTH_ERROR' | 'STATUS' }
+  {
+    type:
+      | 'READY'
+      | 'CHANGE'
+      | 'LOADED'
+      | 'SAVE'
+      | 'UPLOAD'
+      | 'LIST_ASSETS'
+      | 'DELETE_ASSET'
+      | 'AUTH_ERROR'
+      | 'STATUS'
+      | 'HTML_RESULT'
+      | 'JSON_RESULT'
+      | 'DATA_ERROR';
+  }
 >;
 
 export type HostToBuilderMessage = Extract<
   Message,
-  { type: 'INIT' | 'UPLOAD_SUCCESS' | 'ASSETS_LIST' | 'DELETE_ASSET_SUCCESS' }
+  { type: 'INIT' | 'UPLOAD_SUCCESS' | 'ASSETS_LIST' | 'DELETE_ASSET_SUCCESS' | 'GET_HTML' | 'GET_JSON' }
 >;
 
 const VALID_TYPES = new Set<MessageType>([
@@ -143,6 +189,11 @@ const VALID_TYPES = new Set<MessageType>([
   'DELETE_ASSET_SUCCESS',
   'AUTH_ERROR',
   'STATUS',
+  'GET_HTML',
+  'HTML_RESULT',
+  'GET_JSON',
+  'JSON_RESULT',
+  'DATA_ERROR',
 ]);
 
 type ExactRecord = Record<string, unknown>;
@@ -218,8 +269,34 @@ function validAsset(value: unknown): boolean {
   return asset.mimeType === undefined || ['image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'].includes(asset.mimeType as string);
 }
 
+function validFeatures(value: unknown): boolean {
+  const features = exactRecord(value, ['exportUi']);
+  if (!features) return false;
+  return features.exportUi === undefined || typeof features.exportUi === 'boolean';
+}
+
+function validJsonResult(value: unknown): boolean {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+    try {
+      return isWithinUtf8ByteLimit(JSON.stringify(value), SDK_INPUT_LIMITS.htmlBytes);
+    } catch {
+      return false;
+    }
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value);
+  }
+  if (typeof value !== 'object') return false;
+  try {
+    safeStableSerialize(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function validInitPayload(value: unknown): boolean {
-  const payload = exactRecord(value, ['html', 'mergeTags', 'mergeTagTrigger', 'templateId', 'config', 'externalFooterHtml', 'footerInjectionMode']);
+  const payload = exactRecord(value, ['html', 'mergeTags', 'mergeTagTrigger', 'templateId', 'config', 'externalFooterHtml', 'footerInjectionMode', 'features']);
   if (!payload) return false;
   if (payload.html !== undefined && (typeof payload.html !== 'string' || !isWithinUtf8ByteLimit(payload.html, SDK_INPUT_LIMITS.htmlBytes))) return false;
   if (payload.externalFooterHtml !== undefined && (typeof payload.externalFooterHtml !== 'string' || !isWithinUtf8ByteLimit(payload.externalFooterHtml, SDK_INPUT_LIMITS.htmlBytes))) return false;
@@ -230,6 +307,7 @@ function validInitPayload(value: unknown): boolean {
     if (typeof payload.config !== 'object' || payload.config === null || Array.isArray(payload.config)) return false;
     try { safeStableSerialize(payload.config); } catch { return false; }
   }
+  if (payload.features !== undefined && !validFeatures(payload.features)) return false;
   if (payload.mergeTags !== undefined) {
     if (!Array.isArray(payload.mergeTags) || payload.mergeTags.length > SDK_INPUT_LIMITS.mergeTagCount) return false;
     for (const tagValue of payload.mergeTags) {
@@ -242,13 +320,27 @@ function validInitPayload(value: unknown): boolean {
 
 export function isMessageLike(value: unknown): value is Message {
   try {
-    const candidate = exactRecord(value, ['type', 'payload', 'meta'], ['type']);
+    const withPayload = exactRecord(value, ['type', 'payload', 'meta'], ['type']);
+    const withoutPayload = exactRecord(value, ['type', 'meta'], ['type']);
+    const candidate = withPayload ?? withoutPayload;
     if (!candidate || typeof candidate.type !== 'string' || !VALID_TYPES.has(candidate.type as MessageType) || !validMeta(candidate.meta)) return false;
-    if (['UPLOAD', 'LIST_ASSETS', 'DELETE_ASSET'].includes(candidate.type) && candidate.meta === undefined) return false;
-    const payload = candidate.payload;
+    if (['UPLOAD', 'LIST_ASSETS', 'DELETE_ASSET', 'GET_HTML', 'GET_JSON'].includes(candidate.type) && candidate.meta === undefined) return false;
+    const payload = Object.prototype.hasOwnProperty.call(candidate, 'payload') ? candidate.payload : undefined;
     switch (candidate.type as MessageType) {
-    case 'READY': return !Object.prototype.hasOwnProperty.call(candidate, 'payload');
+    case 'READY':
+    case 'GET_HTML':
+    case 'GET_JSON':
+      return !Object.prototype.hasOwnProperty.call(candidate, 'payload');
     case 'CHANGE': case 'LOADED': case 'SAVE': return validHtmlPayload(payload);
+    case 'HTML_RESULT': return validHtmlPayload(payload);
+    case 'JSON_RESULT': {
+      const record = exactRecord(payload, ['json'], ['json']);
+      return !!record && validJsonResult(record.json);
+    }
+    case 'DATA_ERROR': {
+      const record = exactRecord(payload, ['message'], ['message']);
+      return !!record && validBoundedString(record.message, 4096);
+    }
     case 'AUTH_ERROR': {
       const record = exactRecord(payload, ['message'], ['message']);
       return !!record && validBoundedString(record.message, 4096);
