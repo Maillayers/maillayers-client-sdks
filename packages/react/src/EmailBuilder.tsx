@@ -21,12 +21,21 @@ import { normalizeAssetListResult, normalizeUploadResult } from './assets';
 const DEFAULT_SANDBOX = 'allow-scripts allow-same-origin allow-forms';
 const DEFAULT_INITIAL_HTML = '<h1>Hello World</h1><p>Start building your email template.</p>';
 const ASSET_TIMEOUT_MS = 15_000;
+const DATA_TIMEOUT_MS = 15_000;
 const MAX_CONCURRENT_ASSET_REQUESTS = 4;
 const MAX_RECENT_ASSET_REQUESTS = 100;
 
 type PendingMessage = {
   message: HostToBuilderMessage;
   correlationId?: string;
+};
+
+type PendingDataRequest = {
+  expectedType: 'HTML_RESULT' | 'JSON_RESULT';
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+  generation: number;
 };
 
 const overlayStyle: CSSProperties = {
@@ -123,6 +132,7 @@ function EmailBuilderInner(
     hideLoadingOverlay = false,
     iframeTitle = 'Email Builder',
     sandbox = DEFAULT_SANDBOX,
+    exportUi = false,
     onChange,
     onLoad,
     onSave,
@@ -140,14 +150,14 @@ function EmailBuilderInner(
     src, allowedOrigin, apiKey, licenseValidationUrl, embedToken, initialHtml, externalFooterHtml,
     footerInjectionMode, themeMode, theme, config, mergeTags, mergeTagTrigger,
     templateId, tenantId, expectedOrganizationId, expectedLicenseId, style,
-    sandbox, iframeTitle, preview, previewOnly, className, hideLoadingOverlay,
+    sandbox, iframeTitle, preview, previewOnly, className, hideLoadingOverlay, exportUi,
     onChange, onLoad, onSave, onUpload, onListAssets, onDeleteAsset, onReady,
     onStatusChange, onAuthError,
   }), [
     src, allowedOrigin, apiKey, licenseValidationUrl, embedToken, initialHtml, externalFooterHtml,
     footerInjectionMode, themeMode, theme, config, mergeTags, mergeTagTrigger,
     templateId, tenantId, expectedOrganizationId, expectedLicenseId, style,
-    sandbox, iframeTitle, preview, previewOnly, className, hideLoadingOverlay,
+    sandbox, iframeTitle, preview, previewOnly, className, hideLoadingOverlay, exportUi,
     onChange, onLoad, onSave, onUpload, onListAssets, onDeleteAsset, onReady,
     onStatusChange, onAuthError,
   ]);
@@ -180,6 +190,10 @@ function EmailBuilderInner(
 
     return mergedConfig;
   }, [safeConfig, isPreviewMode, safeTheme, safeThemeMode, safeTenantId]);
+  const initFeatures = useMemo(
+    () => (exportUi === true ? { exportUi: true as const } : undefined),
+    [exportUi]
+  );
   const iframeSrc = useMemo(
     () => appendEmbedTokenToSrc(appendPreviewParamsToSrc(resolvedSrc, isPreviewMode), embedToken),
     [resolvedSrc, embedToken, isPreviewMode]
@@ -201,6 +215,7 @@ function EmailBuilderInner(
   const authorizationActiveRef = useRef(false);
   const activeAssetRequestsRef = useRef(new Map<string, AbortController>());
   const recentAssetResponsesRef = useRef(new Map<string, HostToBuilderMessage>());
+  const pendingDataRequestsRef = useRef(new Map<string, PendingDataRequest>());
   const onAuthErrorRef = useRef(onAuthError);
   const onStatusChangeRef = useRef(onStatusChange);
 
@@ -208,6 +223,14 @@ function EmailBuilderInner(
     for (const controller of activeAssetRequestsRef.current.values()) controller.abort();
     activeAssetRequestsRef.current.clear();
     recentAssetResponsesRef.current.clear();
+  }, []);
+
+  const rejectPendingDataRequests = useCallback((reason: string) => {
+    for (const request of pendingDataRequestsRef.current.values()) {
+      clearTimeout(request.timer);
+      request.reject(new Error(reason));
+    }
+    pendingDataRequestsRef.current.clear();
   }, []);
 
   const effectiveInitialHtml =
@@ -231,6 +254,7 @@ function EmailBuilderInner(
     ...(safeTemplateId ? { templateId: safeTemplateId } : {}),
     ...(safeExternalFooterHtml ? { externalFooterHtml: safeExternalFooterHtml } : {}),
     footerInjectionMode: effectiveFooterMode,
+    ...(initFeatures ? { features: initFeatures } : {}),
   };
 
   const latestInitRef = useRef<HostToBuilderMessage>({
@@ -280,6 +304,7 @@ function EmailBuilderInner(
     const generation = ++validationGenerationRef.current;
     authorizationActiveRef.current = false;
     resetAssetRequests();
+    rejectPendingDataRequests('Editor authorization restarted.');
     handshakeGenerationRef.current += 1;
     readyRef.current = false;
     initSentRef.current = false;
@@ -346,7 +371,7 @@ function EmailBuilderInner(
       cancelled = true;
       controller.abort();
     };
-  }, [apiKey, licenseValidationUrl, expectedOrganizationId, expectedLicenseId, expectedOrigin, propError, originError, resetAssetRequests, setStatusSafely]);
+  }, [apiKey, licenseValidationUrl, expectedOrganizationId, expectedLicenseId, expectedOrigin, propError, originError, rejectPendingDataRequests, resetAssetRequests, setStatusSafely]);
 
   const postMessage = useCallback(
     (message: HostToBuilderMessage, correlationId?: string) => {
@@ -543,9 +568,45 @@ function EmailBuilderInner(
           }
           break;
         }
-        case 'STATUS':
-          setStatusSafely(message.payload.status);
+        case 'STATUS': {
+          const next = message.payload.status;
+          // Handshake readiness is separate from export/data-request work.
+          // Once ready, ignore loading/idle/error STATUS demotions so Export,
+          // Copy HTML, and data retrieval never show "Connecting to builder...".
+          if (readyRef.current && next !== 'ready') {
+            break;
+          }
+          setStatusSafely(next);
           break;
+        }
+        case 'HTML_RESULT':
+        case 'JSON_RESULT':
+        case 'DATA_ERROR': {
+          const correlationId = message.meta?.correlationId;
+          if (!correlationId) break;
+          const pending = pendingDataRequestsRef.current.get(correlationId);
+          if (!pending) break;
+          if (pending.generation !== handshakeGenerationRef.current) {
+            pendingDataRequestsRef.current.delete(correlationId);
+            clearTimeout(pending.timer);
+            break;
+          }
+          if (message.type === 'DATA_ERROR') {
+            pendingDataRequestsRef.current.delete(correlationId);
+            clearTimeout(pending.timer);
+            pending.reject(new Error(message.payload.message || 'Editor data request failed.'));
+            break;
+          }
+          if (message.type !== pending.expectedType) break;
+          pendingDataRequestsRef.current.delete(correlationId);
+          clearTimeout(pending.timer);
+          if (message.type === 'HTML_RESULT') {
+            pending.resolve(message.payload.html);
+          } else {
+            pending.resolve(message.payload.json);
+          }
+          break;
+        }
         default:
           break;
       }
@@ -574,6 +635,7 @@ function EmailBuilderInner(
       ...(safeTemplateId ? { templateId: safeTemplateId } : {}),
       ...(safeExternalFooterHtml !== undefined ? { externalFooterHtml: safeExternalFooterHtml } : {}),
       footerInjectionMode: effectiveFooterMode,
+      ...(initFeatures ? { features: initFeatures } : {}),
     };
     try {
       stableSignature(nextPayload);
@@ -588,6 +650,7 @@ function EmailBuilderInner(
   }, [
     effectiveConfig,
     effectiveInitialHtml,
+    initFeatures,
     safeMergeTags,
     safeMergeTagTrigger,
     safeTemplateId,
@@ -601,6 +664,7 @@ function EmailBuilderInner(
     }
     handshakeGenerationRef.current += 1;
     resetAssetRequests();
+    rejectPendingDataRequests('Editor handshake restarted.');
     builderWindowRef.current = iframeRef.current?.contentWindow ?? null;
     readyRef.current = false;
     initSentRef.current = false;
@@ -625,7 +689,48 @@ function EmailBuilderInner(
       setStatusSafely('error');
       if (mountedRef.current) void invokeHostCallback(onAuthError, ['Builder handshake failed or authentication was rejected.']);
     }, 12000);
-  }, [expectedOrigin, isLicenseValidated, onAuthError, resetAssetRequests, setStatusSafely]);
+  }, [expectedOrigin, isLicenseValidated, onAuthError, rejectPendingDataRequests, resetAssetRequests, setStatusSafely]);
+
+  const requestEditorData = useCallback((expectedType: 'HTML_RESULT' | 'JSON_RESULT') => {
+    if (!mountedRef.current || !authorizationActiveRef.current) {
+      return Promise.reject(new Error('Editor is not available.'));
+    }
+    if (!readyRef.current || !expectedOrigin) {
+      return Promise.reject(new Error('Editor is not ready.'));
+    }
+    const target = iframeRef.current?.contentWindow ?? builderWindowRef.current;
+    if (!target) {
+      return Promise.reject(new Error('Editor iframe is unavailable.'));
+    }
+    builderWindowRef.current = target;
+    const requestType = expectedType === 'HTML_RESULT' ? 'GET_HTML' : 'GET_JSON';
+    const envelope = buildEnvelope({ type: requestType } as HostToBuilderMessage);
+    const requestId = envelope.meta!.id;
+    const generation = handshakeGenerationRef.current;
+
+    return new Promise<unknown>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        const pending = pendingDataRequestsRef.current.get(requestId);
+        if (!pending) return;
+        pendingDataRequestsRef.current.delete(requestId);
+        pending.reject(new Error('Editor data request timed out.'));
+      }, DATA_TIMEOUT_MS);
+      pendingDataRequestsRef.current.set(requestId, {
+        expectedType,
+        resolve,
+        reject,
+        timer,
+        generation,
+      });
+      try {
+        target.postMessage(envelope, expectedOrigin);
+      } catch {
+        pendingDataRequestsRef.current.delete(requestId);
+        clearTimeout(timer);
+        reject(new Error('Editor data request failed.'));
+      }
+    });
+  }, [expectedOrigin]);
 
   useImperativeHandle(
     ref,
@@ -633,6 +738,7 @@ function EmailBuilderInner(
       reload() {
         handshakeGenerationRef.current += 1;
         resetAssetRequests();
+        rejectPendingDataRequests('Editor reload started.');
         queueRef.current = [];
         readyRef.current = false;
         initSentRef.current = false;
@@ -644,8 +750,14 @@ function EmailBuilderInner(
         setStatusSafely('loading');
         setReloadKey((key) => key + 1);
       },
+      getHtml() {
+        return requestEditorData('HTML_RESULT') as Promise<string>;
+      },
+      getJson() {
+        return requestEditorData('JSON_RESULT');
+      },
     }),
-    [resetAssetRequests, setStatusSafely]
+    [rejectPendingDataRequests, requestEditorData, resetAssetRequests, setStatusSafely]
   );
 
   useEffect(() => {
@@ -662,9 +774,10 @@ function EmailBuilderInner(
       handshakeGenerationRef.current += 1;
       authorizationActiveRef.current = false;
       resetAssetRequests();
+      rejectPendingDataRequests('Editor was unmounted.');
       mountedRef.current = false;
     };
-  }, [resetAssetRequests]);
+  }, [rejectPendingDataRequests, resetAssetRequests]);
 
   return (
     <div className={propError ? undefined : className} style={{ position: 'relative', width: '100%', height: '100%', ...safeStyle }}>
